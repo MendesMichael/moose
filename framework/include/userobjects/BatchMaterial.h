@@ -131,7 +131,8 @@ public:
   static InputParameters validParams() { return ElementUserObject::validParams(); }
 
   template <typename... Names>
-  BatchMaterial(const InputParameters & params, Names &&... names) : ElementUserObject(params)
+  BatchMaterial(const InputParameters & params, Names &&... names)
+    : ElementUserObject(params), _output_ready(false)
   {
     construct<0, Names...>(std::forward<Names>(names)...);
   }
@@ -149,8 +150,11 @@ public:
   /// The serialized batch data is stored in a vector
   typedef std::vector<InputType> InputVector;
 
-  /// get a reference to the output data
+  /// Get a read-only reference to the output data
   const OutputVector & getOutputData() const { return _output_data; }
+
+  /// Get a writable reference to the output data
+  OutputVector & setOutputData() { return _output_data; }
 
   /// get a reference to the input data
   const InputVector & getInputData() const { return _input_data; }
@@ -191,6 +195,10 @@ public:
   friend struct BatchMaterialUtils::GatherVariable;
 
   friend struct BatchMaterialUtils::GatherVariableOld;
+
+protected:
+  /// Whether we should perform a batch compute
+  virtual bool shouldCompute() { return true; }
 
 private:
   /// flag that indicates if _output_data has been fully computed
@@ -240,13 +248,18 @@ void
 BatchMaterial<Tuple, Output, Input...>::initialize()
 {
   _index = 0;
-  _output_ready = false;
+
+  if (shouldCompute())
+    _output_ready = false;
 }
 
 template <typename Tuple, typename Output, typename... Input>
 void
 BatchMaterial<Tuple, Output, Input...>::execute()
 {
+  if (!shouldCompute())
+    return;
+
   // update index map
   _index_map[_current_elem->id()] = _index;
 
@@ -264,6 +277,9 @@ template <typename Tuple, typename Output, typename... Input>
 void
 BatchMaterial<Tuple, Output, Input...>::threadJoin(const UserObject & uo)
 {
+  if (!shouldCompute())
+    return;
+
   // join maps (with index shift)
   const auto & bm = static_cast<const BatchMaterialType &>(uo);
   for (const auto & [id, index] : bm._index_map)
@@ -285,6 +301,9 @@ template <typename Tuple, typename Output, typename... Input>
 void
 BatchMaterial<Tuple, Output, Input...>::finalize()
 {
+  if (!shouldCompute())
+    return;
+
   // resize the input and output data blocks to contain just the gathered items
   // (should be a no-op mostly)
   _input_data.resize(_index);

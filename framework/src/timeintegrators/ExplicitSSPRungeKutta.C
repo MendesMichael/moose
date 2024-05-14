@@ -75,7 +75,7 @@ ExplicitSSPRungeKutta::computeTimeDerivatives()
 void
 ExplicitSSPRungeKutta::computeADTimeDerivatives(ADReal & ad_u_dot,
                                                 const dof_id_type & dof,
-                                                DualReal & /*ad_u_dotdot*/) const
+                                                ADReal & /*ad_u_dotdot*/) const
 {
   // Note that if the solution for the current stage is not a nullptr, then neither
   // are the previous stages.
@@ -136,13 +136,19 @@ ExplicitSSPRungeKutta::solve()
     if (!converged)
       return;
   }
+
+  if (_stage == _n_stages)
+    // We made it to the end of the solve. We may call functions like computeTimeDerivatives later
+    // for postprocessing purposes in which case we need to ensure we're accessing our data
+    // correctly (e.g. not out-of-bounds)
+    --_stage;
 }
 
 bool
 ExplicitSSPRungeKutta::solveStage()
 {
   // Compute the mass matrix
-  _nl.computeTimeDerivatives();
+  computeTimeDerivatives();
   auto & mass_matrix = _nonlinear_implicit_system->get_system_matrix();
   _fe_problem.computeJacobianTag(
       *_nonlinear_implicit_system->current_local_solution, mass_matrix, _Ke_time_tag);

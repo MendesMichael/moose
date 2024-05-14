@@ -322,8 +322,7 @@ outputExecutionInformation(const MooseApp & app, FEProblemBase & problem)
   Executioner * exec = app.getExecutioner();
 
   oss << "Execution Information:\n"
-      << std::setw(console_field_width) << "  Executioner: " << demangle(typeid(*exec).name())
-      << '\n';
+      << std::setw(console_field_width) << "  Executioner: " << exec->type() << '\n';
 
   std::string time_stepper = exec->getTimeStepperName();
   if (time_stepper != "")
@@ -400,6 +399,21 @@ outputLegacyInformation(MooseApp & app)
            "'use_legacy_material_output' to false in this application. If there are gold output "
            "files that contain material property output for which output occurs on INITIAL, then "
            "these will generate diffs due to zero values being stored, and these tests should be "
+           "re-golded.\n"
+        << COLOR_DEFAULT << std::endl;
+  }
+
+  if (app.parameters().get<bool>("use_legacy_initial_residual_evaluation_behavior"))
+  {
+    oss << COLOR_RED << "LEGACY MODES ENABLED:" << COLOR_DEFAULT << '\n';
+    oss << " This application uses the legacy initial residual evaluation behavior. The legacy "
+           "behavior performs an often times redundant residual evaluation before the solution "
+           "modifying objects are executed prior to the initial (0th nonlinear iteration) residual "
+           "evaluation. The new behavior skips that redundant residual evaluation unless the "
+           "parameter Executioner/use_pre_smo_residual is set to true. To remove this message and "
+           "enable the new behavior, set the parameter "
+           "'use_legacy_initial_residual_evaluation_behavior' to false in *App.C. Some tests that "
+           "rely on the side effects of the legacy behavior may fail/diff and should be "
            "re-golded.\n"
         << COLOR_DEFAULT << std::endl;
   }

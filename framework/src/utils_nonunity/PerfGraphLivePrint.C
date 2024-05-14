@@ -18,7 +18,6 @@ PerfGraphLivePrint::PerfGraphLivePrint(PerfGraph & perf_graph, MooseApp & app)
     _perf_graph_registry(moose::internal::getPerfGraphRegistry()),
     _execution_list(perf_graph._execution_list),
     _currently_destructing(false),
-    _should_print(true),
     _time_limit(perf_graph._live_print_time_limit),
     _mem_limit(perf_graph._live_print_mem_limit),
     _stack_level(0),
@@ -28,7 +27,6 @@ PerfGraphLivePrint::PerfGraphLivePrint(PerfGraph & perf_graph, MooseApp & app)
     _last_printed_increment(NULL),
     _last_num_printed(0),
     _console_num_printed(0),
-    _printed(false),
     _stack_top_print_dots(true)
 {
 }
@@ -65,16 +63,13 @@ PerfGraphLivePrint::printLiveMessage(PerfGraph::SectionIncrement & section_incre
 
   // This line is different - need to finish the last line
   if (_last_printed_increment && _last_printed_increment != &section_increment &&
-      (_last_printed_increment->_state == PerfGraph::IncrementState::PRINTED ||
-       _last_printed_increment->_state == PerfGraph::IncrementState::CONTINUED) &&
+      _last_printed_increment->_state == PerfGraph::IncrementState::PRINTED &&
       section_info._print_dots)
     _console << '\n';
 
   // Do we need to print dots?
   if (_last_printed_increment && _last_printed_increment == &section_increment &&
-      (section_increment._state != PerfGraph::IncrementState::FINISHED &&
-       (section_increment._state == PerfGraph::IncrementState::PRINTED ||
-        section_increment._state == PerfGraph::IncrementState::CONTINUED)))
+      section_increment._state == PerfGraph::IncrementState::PRINTED)
   {
     if (section_info._print_dots)
     {
@@ -82,9 +77,8 @@ PerfGraphLivePrint::printLiveMessage(PerfGraph::SectionIncrement & section_incre
       section_increment._num_dots++;
     }
   }
-  else if (section_increment._state == PerfGraph::IncrementState::PRINTED ||
-           section_increment._state ==
-               PerfGraph::IncrementState::CONTINUED) // Printed before so print "Still"
+  // Printed before so print "Still"
+  else if (section_increment._state == PerfGraph::IncrementState::PRINTED)
   {
     _console << std::string(2 * section_increment._print_stack_level, ' ') << "Still " << message;
 
@@ -119,8 +113,6 @@ PerfGraphLivePrint::printLiveMessage(PerfGraph::SectionIncrement & section_incre
   _last_num_printed = section_increment._beginning_num_printed = _console.numPrinted();
 
   _last_printed_increment = &section_increment;
-
-  _printed = true;
 }
 
 void
@@ -193,8 +185,6 @@ PerfGraphLivePrint::printStats(PerfGraph::SectionIncrement & section_increment_s
   _last_num_printed = _console.numPrinted();
 
   _last_printed_increment = &section_increment_finish;
-
-  _printed = true;
 }
 
 void
@@ -212,8 +202,6 @@ PerfGraphLivePrint::printStackUpToLast()
     if (section._state == PerfGraph::IncrementState::STARTED)
       printLiveMessage(section);
 
-    // Note: this will reset the state of a "continued" section to "printed" - so that it can be
-    // continued again
     section._state = PerfGraph::IncrementState::PRINTED;
   }
 }
@@ -288,7 +276,6 @@ PerfGraphLivePrint::iterateThroughExecutionList()
       // If it has already been printed or meets our criteria then print it and finish it
       if (_perf_graph._live_print_all ||
           section_increment_start._state == PerfGraph::IncrementState::PRINTED ||
-          section_increment_start._state == PerfGraph::IncrementState::CONTINUED ||
           time_increment > _time_limit.load(std::memory_order_relaxed) ||
           memory_increment > _mem_limit.load(std::memory_order_relaxed))
       {
@@ -315,18 +302,18 @@ PerfGraphLivePrint::start()
   {
     std::unique_lock<std::mutex> lock(_perf_graph._destructing_mutex);
 
-    // Wait for one second, or until notified that a section is finished
+    // Wait for five seconds (by default), or until notified that a section is finished
     // For a section to have finished the execution list has to have been appended to
     // This keeps spurious wakeups from happening
     // Note that the `lock` is only protecting _destructing since the execution list uses atomics.
     // It must be atomic in order to keep the main thread from having to lock as it
     // executes.  The only downside to this is that it is possible for this thread to wake,
     // check the condition, miss the notification, then wait.  In our case this is not detrimental,
-    // as the only thing that will happen is we will wait 1 more second.  This is also very
+    // as the only thing that will happen is we will wait 5 more seconds.  This is also very
     // unlikely.
-    // One other thing: wait_for() is not guaranteed to wait for 1 second.  "Spurious" wakeups
+    // One other thing: wait_for() is not guaranteed to wait for 5 seconds.  "Spurious" wakeups
     // can occur - but the predicate here keeps us from doing anything in that case.
-    // This will either wait until 1 second has passed, the signal is sent, _or_ a spurious
+    // This will either wait until 5 seconds have passed, the signal is sent, _or_ a spurious
     // wakeup happens to find that there is work to do.
     _perf_graph._finished_section.wait_for(
         lock,
@@ -358,13 +345,6 @@ PerfGraphLivePrint::start()
         this->_last_execution_list_end == this->_current_execution_list_end)
       return;
 
-    // We store this off for one execution of this loop so that it's consistent all for the whole
-    // iteration
-    _should_print = _perf_graph._live_print_active;
-
-    if (!_should_print)
-      continue;
-
     // The last entry in the current execution list for convenience
     _current_execution_list_last = static_cast<long int>(_current_execution_list_end) - 1 >= 0
                                        ? _current_execution_list_end - 1
@@ -373,8 +353,6 @@ PerfGraphLivePrint::start()
     // Only happens if nothing has been added
     if (_current_execution_list_end == 0 && _last_execution_list_end == _current_execution_list_end)
       continue;
-
-    _printed = false;
 
     // Iterate from the last thing printed (begin) to the last thing in the list (end)
     // If the time or memory of any section is above the threshold, print everything in between and

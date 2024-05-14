@@ -1,8 +1,8 @@
-mu=1
-rho=1
-k=1e-3
-cp=1
-alpha=1
+mu = 1
+rho = 1
+k = 1e-3
+cp = 1
+alpha = 1
 
 [Mesh]
   [gen]
@@ -34,17 +34,14 @@ alpha=1
   [vel_x]
     type = 'INSFVVelocityVariable'
     initial_condition = 1
-    block=1
   []
   [vel_y]
     type = 'INSFVVelocityVariable'
     initial_condition = 1
-    block=1
   []
   [pressure]
     type = 'INSFVPressureVariable'
     initial_condition = 0
-    block=1
   []
   [T_fluid]
     type = 'INSFVEnergyVariable'
@@ -98,8 +95,10 @@ alpha=1
     ambient_temperature = '100'
 
     friction_blocks = '1; 2'
-    friction_types = 'darcy; darcy'
-    friction_coeffs = '1.0; 1.0'
+    friction_types = 'Darcy; Darcy'
+    friction_coeffs = 'friction_coefficient; friction_coefficient'
+
+    standard_friction_formulation = false
   []
 []
 
@@ -112,6 +111,11 @@ alpha=1
   [kappa]
     type = ADGenericVectorFunctorMaterial
     prop_names = 'kappa'
+    prop_values = '1 1 1'
+  []
+  [friction_coefficient]
+    type = ADGenericVectorFunctorMaterial
+    prop_names = 'friction_coefficient'
     prop_values = '1 1 1'
   []
 []

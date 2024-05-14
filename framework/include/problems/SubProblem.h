@@ -633,7 +633,7 @@ public:
    * Returns true if the problem is in the process of computing it's initial residual.
    * @return Whether or not the problem is currently computing the initial residual.
    */
-  virtual bool computingInitialResidual(const unsigned int nl_sys_num) const = 0;
+  virtual bool computingPreSMOResidual(const unsigned int nl_sys_num) const = 0;
 
   /**
    * Return the list of elements that should have their DoFs ghosted to this processor.
@@ -1222,9 +1222,12 @@ SubProblem::getFunctor(const std::string & name,
       // Check for whether this is a valid request
       if (!requested_functor_is_ad && requestor_is_ad &&
           true_functor_is == SubProblem::TrueFunctorIs::AD)
-        mooseError("We are requesting a non-AD functor from an AD object, but the true functor is "
-                   "AD. This "
-                   "means we could be dropping important derivatives. We will not allow this");
+        mooseError("The AD object '",
+                   requestor_name,
+                   "' is requesting the functor '",
+                   name,
+                   "' as a non-AD functor even though it is truly an AD functor, which is not "
+                   "allowed, since this may unintentionally drop derivatives.");
     }
 
     return *functor;

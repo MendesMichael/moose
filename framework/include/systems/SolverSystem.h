@@ -68,10 +68,18 @@ public:
 
   virtual const NumericVector<Number> * const & currentSolution() const override final;
 
+  virtual void compute(ExecFlagType type) override;
+
 protected:
   void checkInvalidSolution();
 
   virtual NumericVector<Number> & solutionInternal() const override final;
+
+  /**
+   * Whether a system matrix is formed from coloring. This influences things like when to compute
+   * time derivatives
+   */
+  virtual bool matrixFromColoring() const { return false; }
 
   /// solution vector from solver
   const NumericVector<Number> * _current_solution;

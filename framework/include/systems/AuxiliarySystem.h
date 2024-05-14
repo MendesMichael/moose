@@ -106,7 +106,7 @@ public:
    * Compute auxiliary variables
    * @param type Time flag of which variables should be computed
    */
-  virtual void compute(ExecFlagType type);
+  virtual void compute(ExecFlagType type) override;
 
   /**
    * Get a list of dependent UserObjects for this exec type
@@ -145,6 +145,10 @@ public:
   const ExecuteMooseObjectWarehouse<AuxKernel> & elemAuxWarehouse() const;
   const ExecuteMooseObjectWarehouse<VectorAuxKernel> & elemVectorAuxWarehouse() const;
   const ExecuteMooseObjectWarehouse<ArrayAuxKernel> & elemArrayAuxWarehouse() const;
+
+  /// Computes and stores ||current - old|| / ||current|| for each variable in the given vector
+  /// @param var_diffs a vector being filled with the L2 norm of the solution difference
+  void variableWiseRelativeSolutionDifferenceNorm(std::vector<Number> & var_diffs) const;
 
 protected:
   void computeScalarVars(ExecFlagType type);

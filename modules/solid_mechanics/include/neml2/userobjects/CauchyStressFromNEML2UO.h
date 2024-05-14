@@ -23,6 +23,8 @@
 #include "SymmetricRankTwoTensor.h"
 #include "SymmetricRankFourTensor.h"
 
+#include "BatchPropertyDerivative.h"
+
 typedef BatchMaterial<BatchMaterialUtils::TupleStd,
                       // Outputs: stress, dstress/dstrain
                       std::tuple<RankTwoTensor, RankFourTensor>,
@@ -46,15 +48,20 @@ public:
   CauchyStressFromNEML2UO(const InputParameters & params);
 
 #ifndef NEML2_ENABLED
-
+  virtual void preCompute() {}
   virtual void batchCompute() override {}
-
+  virtual void postCompute() {}
 #else
 
   virtual void batchCompute() override;
+  virtual void preCompute();
   virtual void timestepSetup() override;
+  virtual void postCompute();
 
 protected:
+  /// Determine whether the material model should be called
+  virtual bool shouldCompute() override;
+
   /// Advance state and forces in time
   virtual void advanceStep();
 
@@ -75,6 +82,9 @@ protected:
 
   /// The derivative of the output vector w.r.t. the input vector
   neml2::LabeledMatrix _dout_din;
+
+  /// The material property values gathered from MOOSE used to set parameter values in the NEML2 material model.
+  std::map<std::string, BatchPropertyDerivativeRankTwoTensorReal *> _props;
 
 #endif // NEML2_ENABLED
 };

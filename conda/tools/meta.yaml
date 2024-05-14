@@ -6,7 +6,7 @@
 #   framework/doc/packages_config.yml
 #
 # As well as any directions pertaining to modifying those files.
-{% set version = "2024.03.07" %}
+{% set version = "2024.05.02" %}
 
 package:
   name: moose-tools
@@ -54,10 +54,12 @@ requirements:
     - pylint
     - python
     - pyyaml
+    - requests
     - scikit-image
     - setuptools
     - sympy
     - tabulate
+    - uncertainties
     - xmltodict
     - yaml
     # TODO: Try to remove when this version settles down among other conda-forge packages
@@ -86,6 +88,7 @@ test:
     - pyflakes
     - pylatexenc
     - pylint
+    - requests
     - skimage
     - sympy
     - tabulate

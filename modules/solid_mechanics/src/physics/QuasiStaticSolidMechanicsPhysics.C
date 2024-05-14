@@ -116,6 +116,12 @@ QuasiStaticSolidMechanicsPhysics::validParams()
                                              "Functions giving the target "
                                              "values of each constraint.");
 
+  params.addParamNamesToGroup("scaling", "Variables");
+  params.addParamNamesToGroup("strain_base_name automatic_eigenstrain_names", "Strain");
+  params.addParamNamesToGroup(
+      "cylindrical_axis_point1 cylindrical_axis_point2 spherical_center_point direction",
+      "Coordinate system");
+
   return params;
 }
 
@@ -207,6 +213,13 @@ QuasiStaticSolidMechanicsPhysics::QuasiStaticSolidMechanicsPhysics(const InputPa
   // plane strain consistency check
   if (_planar_formulation != PlanarFormulation::None)
   {
+    if (_lagrangian_kernels)
+      mooseDocumentedError(
+          "moose",
+          27340,
+          "Planar formulations are not yet available through the Physics syntax with new_system = "
+          "true. They can be enabled by manually setting up the appropriate objects. Please refer "
+          "to the documentation and regression tests for examples.");
     if (params.isParamSetByUser("out_of_plane_strain") &&
         _planar_formulation != PlanarFormulation::WeakPlaneStress)
       mooseError(
@@ -328,9 +341,6 @@ QuasiStaticSolidMechanicsPhysics::act()
   {
     if (_planar_formulation == PlanarFormulation::GeneralizedPlaneStrain)
     {
-      if (_lagrangian_kernels)
-        paramError("Plane formulation not available with Lagrangian kernels");
-
       if (_use_ad)
         paramError("use_automatic_differentiation", "AD not setup for use with PlaneStrain");
       // Set the action parameters

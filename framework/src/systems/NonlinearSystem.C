@@ -128,34 +128,8 @@ NonlinearSystem::init()
 }
 
 void
-NonlinearSystem::solve()
+NonlinearSystem::potentiallySetupFiniteDifferencing()
 {
-  // Only attach the postcheck function to the solver if we actually
-  // have dampers or if the FEProblemBase needs to update the solution,
-  // which is also done during the linesearch postcheck.  It doesn't
-  // hurt to do this multiple times, it is just setting a pointer.
-  if (_fe_problem.hasDampers() || _fe_problem.shouldUpdateSolution() ||
-      _fe_problem.needsPreviousNewtonIteration())
-    _nl_implicit_sys.nonlinear_solver->postcheck = Moose::compute_postcheck;
-
-  if (_fe_problem.solverParams()._type != Moose::ST_LINEAR)
-  {
-    TIME_SECTION("nlInitialResidual", 3, "Computing Initial Residual");
-    // Calculate the initial residual for use in the convergence criterion.
-    _computing_initial_residual = true;
-    _fe_problem.computeResidualSys(_nl_implicit_sys, *_current_solution, *_nl_implicit_sys.rhs);
-    _computing_initial_residual = false;
-    _nl_implicit_sys.rhs->close();
-    _initial_residual_before_preset_bcs = _nl_implicit_sys.rhs->l2_norm();
-    if (_compute_initial_residual_before_preset_bcs)
-      _console << "Initial residual before setting preset BCs: "
-               << _initial_residual_before_preset_bcs << std::endl;
-  }
-
-  const bool presolve_succeeded = preSolve();
-  if (!presolve_succeeded)
-    return;
-
   if (_use_finite_differenced_preconditioner)
   {
     _nl_implicit_sys.nonlinear_solver->fd_residual_object = &_fd_residual_functor;
@@ -167,27 +141,60 @@ NonlinearSystem::solve()
   solver.mffd_residual_object = &_fd_residual_functor;
 
   solver.set_snesmf_reuse_base(_fe_problem.useSNESMFReuseBase());
+}
+
+void
+NonlinearSystem::solve()
+{
+  // Only attach the postcheck function to the solver if we actually
+  // have dampers or if the FEProblemBase needs to update the solution,
+  // which is also done during the linesearch postcheck.  It doesn't
+  // hurt to do this multiple times, it is just setting a pointer.
+  if (_fe_problem.hasDampers() || _fe_problem.shouldUpdateSolution() ||
+      _fe_problem.needsPreviousNewtonIteration())
+    _nl_implicit_sys.nonlinear_solver->postcheck = Moose::compute_postcheck;
+
+  // reset solution invalid counter for the time step
+  if (_time_integrator)
+    _app.solutionInvalidity().resetSolutionInvalidTimeStep();
+
+  if (shouldEvaluatePreSMOResidual())
+  {
+    TIME_SECTION("nlPreSMOResidual", 3, "Computing Pre-SMO Residual");
+    // Calculate the pre-SMO residual for use in the convergence criterion.
+    _computing_pre_smo_residual = true;
+    _fe_problem.computeResidualSys(_nl_implicit_sys, *_current_solution, *_nl_implicit_sys.rhs);
+    _computing_pre_smo_residual = false;
+    _nl_implicit_sys.rhs->close();
+    _pre_smo_residual = _nl_implicit_sys.rhs->l2_norm();
+    _console << "Pre-SMO residual: " << _pre_smo_residual << std::endl;
+  }
+
+  const bool presolve_succeeded = preSolve();
+  if (!presolve_succeeded)
+    return;
+
+  potentiallySetupFiniteDifferencing();
 
   if (_time_integrator)
   {
-    // reset solution invalid counter for the time step
-    _app.solutionInvalidity().resetSolutionInvalidTimeStep();
     _time_integrator->solve();
     _time_integrator->postSolve();
     _n_iters = _time_integrator->getNumNonlinearIterations();
     _n_linear_iters = _time_integrator->getNumLinearIterations();
-    // Accumulate only the occurence of solution invalid warnings for the current time step counters
-    _app.solutionInvalidity().solutionInvalidAccumulationTimeStep();
   }
   else
   {
     system().solve();
     _n_iters = _nl_implicit_sys.n_nonlinear_iterations();
-    _n_linear_iters = solver.get_total_linear_iterations();
+    _n_linear_iters = _nl_implicit_sys.nonlinear_solver->get_total_linear_iterations();
   }
 
   // store info about the solve
   _final_residual = _nl_implicit_sys.final_nonlinear_residual();
+
+  // Accumulate only the occurence of solution invalid warnings
+  _app.solutionInvalidity().solutionInvalidAccumulationTimeStep();
 
   // determine whether solution invalid occurs in the converged solution
   checkInvalidSolution();
@@ -231,14 +238,14 @@ NonlinearSystem::setupFiniteDifferencedPreconditioner()
 
   if (fdp->finiteDifferenceType() == "coloring")
   {
-    setupColoringFiniteDifferencedPreconditioner();
     _use_coloring_finite_difference = true;
+    setupColoringFiniteDifferencedPreconditioner();
   }
 
   else if (fdp->finiteDifferenceType() == "standard")
   {
-    setupStandardFiniteDifferencedPreconditioner();
     _use_coloring_finite_difference = false;
+    setupStandardFiniteDifferencedPreconditioner();
   }
   else
     mooseError("Unknown finite difference type");

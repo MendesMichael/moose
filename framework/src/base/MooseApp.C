@@ -344,6 +344,13 @@ MooseApp::validParams()
       "use_legacy_material_output",
       true,
       "Set false to allow material properties to be output on INITIAL, not just TIMESTEP_END.");
+  params.addParam<bool>(
+      "use_legacy_initial_residual_evaluation_behavior",
+      true,
+      "The legacy behavior performs an often times redundant residual evaluation before the "
+      "solution modifying objects are executed prior to the initial (0th nonlinear iteration) "
+      "residual evaluation. The new behavior skips that redundant residual evaluation unless the "
+      "parameter Executioner/use_pre_SMO_residual is set to true.");
 
   params.addParam<bool>(
       MeshGeneratorSystem::allow_data_driven_param,
@@ -532,6 +539,8 @@ MooseApp::MooseApp(InputParameters parameters)
   _the_warehouse->registerAttribute<AttribSorted>("sorted");
   _the_warehouse->registerAttribute<AttribDisplaced>("displaced", -1);
 
+  _perf_graph.enableLivePrint();
+
   if (isParamValid("_argc") && isParamValid("_argv"))
   {
     int argc = getParam<int>("_argc");
@@ -547,7 +556,7 @@ MooseApp::MooseApp(InputParameters parameters)
   if (_check_input && isParamValid("recover"))
     mooseError("Cannot run --check-input with --recover. Recover files might not exist");
 
-  if (isParamValid("start_in_debugger") && _multiapp_level == 0)
+  if (isParamValid("start_in_debugger") && isUltimateMaster())
   {
     auto command = getParam<std::string>("start_in_debugger");
 
@@ -584,7 +593,7 @@ MooseApp::MooseApp(InputParameters parameters)
     std::this_thread::sleep_for(std::chrono::seconds(10));
   }
 
-  if (!parameters.isParamSetByAddParam("stop_for_debugger"))
+  if (!parameters.isParamSetByAddParam("stop_for_debugger") && isUltimateMaster())
   {
     Moose::out << "\nStopping for " << getParam<unsigned int>("stop_for_debugger")
                << " seconds to allow attachment from a debugger.\n";
@@ -712,11 +721,7 @@ MooseApp::setupOptions()
 
   // The no_timing flag takes precedence over the timing flag.
   if (getParam<bool>("no_timing"))
-  {
     _pars.set<bool>("timing") = false;
-
-    _perf_graph.setActive(false);
-  }
 
   if (isParamValid("trap_fpe") && isParamValid("no_trap_fpe"))
     mooseError("Cannot use both \"--trap-fpe\" and \"--no-trap-fpe\" flags.");

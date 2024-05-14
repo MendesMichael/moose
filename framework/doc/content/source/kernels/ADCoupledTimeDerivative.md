@@ -6,7 +6,7 @@ The `ADCoupledTimeDerivative` kernel is very similar to the
 [`TimeDerivative`](/TimeDerivative.md) kernel with the exception that the time
 derivative operator is applied to a coupled variable $v$ instead of the kernel
 variable $u$ which the `ADCoupledTimeDerivative` residual is assigned to.
-Consequently, the strong form on the the domain $\Omega$ is
+Consequently, the strong form on the domain $\Omega$ is
 
 \begin{equation}
 \underbrace{\frac{\partial v}{\partial t}}_{\textrm{ADCoupledTimeDerivative}} +
@@ -36,9 +36,7 @@ equations for phase field calculations. The syntax is simple, taking its type
 that the time derivative operator acts upon. Example syntax can be found in the
 kernel block below:
 
-!listing
-test/tests/kernels/coupled_time_derivative/ad_coupled_time_derivative_test.i
-block=Kernels label=false
+!listing test/tests/kernels/coupled_time_derivative/ad_coupled_time_derivative_test.i block=Kernels
 
 !syntax parameters /Kernels/ADCoupledTimeDerivative
 

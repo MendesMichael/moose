@@ -71,6 +71,8 @@ public:
 
   void residualAndJacobianTogether() override;
 
+  virtual void potentiallySetupFiniteDifferencing() override;
+
 protected:
   void computeScalingJacobian() override;
   void computeScalingResidual() override;
@@ -99,6 +101,8 @@ private:
    * method.
    */
   void setupColoringFiniteDifferencedPreconditioner();
+
+  virtual bool matrixFromColoring() const override { return _use_coloring_finite_difference; }
 
   bool _use_coloring_finite_difference;
 };

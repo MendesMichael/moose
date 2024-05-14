@@ -23,6 +23,7 @@ NavierStokesApp::validParams()
   params.set<bool>("automatic_automatic_scaling") = false;
 
   params.set<bool>("use_legacy_material_output") = false;
+  params.set<bool>("use_legacy_initial_residual_evaluation_behavior") = false;
 
   return params;
 }
@@ -48,9 +49,18 @@ NavierStokesApp::registerApps()
 static void
 associateSyntaxInner(Syntax & syntax, ActionFactory & /*action_factory*/)
 {
-  // Create the syntax
+  // Physics syntax
+  registerSyntax("WCNSFVFlowPhysics", "Physics/NavierStokes/Flow/*");
+  registerSyntax("WCNSFVFluidHeatTransferPhysics", "Physics/NavierStokes/FluidHeatTransfer/*");
+  registerSyntax("WCNSFVScalarTransportPhysics", "Physics/NavierStokes/ScalarTransport/*");
+  registerSyntax("WCNSFVTurbulencePhysics", "Physics/NavierStokes/Turbulence/*");
+  registerSyntax("PNSFVSolidHeatTransferPhysics", "Physics/NavierStokes/SolidHeatTransfer/*");
+
+  // Create the Action syntax
   registerSyntax("CNSAction", "Modules/CompressibleNavierStokes");
   registerSyntax("INSAction", "Modules/IncompressibleNavierStokes");
+
+  // Deprecated action syntax for NavierStokesFV
   registerSyntax("NSFVAction", "Modules/NavierStokesFV");
 
   // add variables action

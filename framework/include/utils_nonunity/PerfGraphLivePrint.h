@@ -82,11 +82,6 @@ private:
    */
   std::atomic<bool> _currently_destructing;
 
-  /// Whether or not printing is currently turned on
-  /// This shadows PerfGraph._live_print_active so that we have consistency
-  /// during a single printing
-  bool _should_print;
-
   /// Limit (in seconds) before printing
   std::atomic<Real> & _time_limit;
 
@@ -121,9 +116,6 @@ private:
 
   /// The current output count from the console
   unsigned long long int _console_num_printed;
-
-  /// Whether or not printing happened in this iteration
-  bool _printed;
 
   /// Whether or not the top thing on the stack is set to print dots
   bool _stack_top_print_dots;

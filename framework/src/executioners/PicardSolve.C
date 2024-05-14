@@ -53,9 +53,8 @@ PicardSolve::validParams()
                                   "performed based on the Master app's nonlinear "
                                   "residual.",
                                   "Deprecated, use fixed_point_abs_tol");
-  params.addDeprecatedParam<PostprocessorName>("picard_custom_pp",
-                                               "Postprocessor for custom picard convergence check.",
-                                               "Deprecated, use custom_pp");
+  params.addParam<PostprocessorName>("picard_custom_pp",
+                                     "Postprocessor for custom picard convergence check.");
   params.deprecateParam("picard_custom_pp", "custom_pp", "06/06/2024");
 
   params.addDeprecatedParam<bool>(
@@ -263,13 +262,14 @@ PicardSolve::printFixedPointConvergenceHistory()
            << Console::outputNorm(std::numeric_limits<Real>::max(), _fixed_point_initial_norm)
            << '\n';
 
+  Real max_norm_old = _fixed_point_initial_norm;
   for (unsigned int i = 0; i <= _fixed_point_it; ++i)
   {
     Real max_norm =
         std::max(_fixed_point_timestep_begin_norm[i], _fixed_point_timestep_end_norm[i]);
     _console << std::setw(2) << i + 1
-             << " Picard |R| = " << Console::outputNorm(_fixed_point_initial_norm, max_norm)
-             << '\n';
+             << " Picard |R| = " << Console::outputNorm(max_norm_old, max_norm) << '\n';
+    max_norm_old = max_norm;
   }
 
   _console << std::endl;

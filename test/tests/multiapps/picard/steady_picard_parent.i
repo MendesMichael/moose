@@ -63,7 +63,6 @@
   petsc_options_iname = '-pc_type -pc_hypre_type'
   petsc_options_value = 'hypre boomeramg'
   fixed_point_max_its = 10
-  fixed_point_rel_tol = 1e-6
 []
 
 [Outputs]
@@ -74,7 +73,7 @@
   [sub]
     type = FullSolveMultiApp
     input_files = steady_picard_sub.i
-    no_backup_and_restore = true
+    no_restore = true
   []
 []
 

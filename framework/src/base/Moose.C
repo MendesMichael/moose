@@ -220,6 +220,7 @@ addActionTypes(Syntax & syntax)
   registerTask("check_copy_nodal_vars", true);
   registerTask("copy_nodal_vars", true);
   registerTask("copy_nodal_aux_vars", true);
+  registerTask("copy_vars_physics", false);
   registerTask("setup_postprocessor_data", false);
   registerTask("setup_time_steppers", true);
 
@@ -227,6 +228,7 @@ addActionTypes(Syntax & syntax)
   registerTask("check_integrity", true);
   registerTask("resolve_optional_materials", true);
   registerTask("check_integrity_early", true);
+  registerTask("check_integrity_early_physics", false);
   registerTask("setup_quadrature", true);
 
   /// Additional Actions
@@ -310,6 +312,7 @@ addActionTypes(Syntax & syntax)
                            "(read_executor)"
                            "(add_executor)"
                            "(check_integrity_early)"
+                           "(check_integrity_early_physics)"
                            "(setup_predictor)"
                            "(init_displaced_problem)"
                            "(add_aux_variable, add_variable, add_elemental_field_variable,"
@@ -340,7 +343,7 @@ addActionTypes(Syntax & syntax)
                            "(add_mesh_division)"  // NearestPositionsDivision uses a Positions
                            "(add_multi_app)"
                            "(add_transfer)"
-                           "(copy_nodal_vars, copy_nodal_aux_vars)"
+                           "(copy_nodal_vars, copy_nodal_aux_vars, copy_vars_physics)"
                            "(add_material)"
                            "(add_master_action_material)"
                            "(add_functor_material)"

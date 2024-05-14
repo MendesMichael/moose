@@ -176,6 +176,19 @@ FixedPointSolve::FixedPointSolve(Executioner & ex)
     _secondary_transformed_variables = _app.fixedPointConfig().sub_transformed_vars;
     _secondary_transformed_pps = _app.fixedPointConfig().sub_transformed_pps;
   }
+
+  if (!_has_fixed_point_norm && parameters().isParamSetByUser("fixed_point_rel_tol"))
+    paramWarning(
+        "disable_fixed_point_residual_norm_check",
+        "fixed_point_rel_tol will be ignored because the fixed point residual check is disabled.");
+  if (!_has_fixed_point_norm && parameters().isParamSetByUser("fixed_point_abs_tol"))
+    paramWarning(
+        "disable_fixed_point_residual_norm_check",
+        "fixed_point_abs_tol will be ignored because the fixed point residual check is disabled.");
+  if (!_has_fixed_point_norm && parameters().isParamSetByUser("fixed_point_force_norms"))
+    paramWarning("disable_fixed_point_residual_norm_check",
+                 "fixed_point_force_norms will be ignored because the fixed point residual check "
+                 "is disabled.");
 }
 
 bool
@@ -518,16 +531,16 @@ FixedPointSolve::examineFixedPointConvergence(bool & converged)
       _fixed_point_status = MooseFixedPointConvergenceReason::CONVERGED_RELATIVE;
       return true;
     }
-  }
-  if (std::abs(_pp_new - _pp_old) < _custom_abs_tol)
-  {
-    _fixed_point_status = MooseFixedPointConvergenceReason::CONVERGED_CUSTOM;
-    return true;
-  }
-  if (std::abs((_pp_new - _pp_old) / _pp_scaling) < _custom_rel_tol)
-  {
-    _fixed_point_status = MooseFixedPointConvergenceReason::CONVERGED_CUSTOM;
-    return true;
+    if (std::abs(_pp_new - _pp_old) < _custom_abs_tol)
+    {
+      _fixed_point_status = MooseFixedPointConvergenceReason::CONVERGED_CUSTOM;
+      return true;
+    }
+    if (std::abs((_pp_new - _pp_old) / _pp_scaling) < _custom_rel_tol)
+    {
+      _fixed_point_status = MooseFixedPointConvergenceReason::CONVERGED_CUSTOM;
+      return true;
+    }
   }
   if (_fixed_point_it + 1 == _max_fixed_point_its)
   {
