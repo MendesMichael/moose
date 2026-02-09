@@ -5,5 +5,5 @@
     csvdiff = steady_state_aux_zero_nan.csv
     ignore_columns = 'u_avg dummy_avg'
     issues = '#TBD'
-  [../]
+  []
 []
