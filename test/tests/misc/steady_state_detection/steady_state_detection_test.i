@@ -6,8 +6,6 @@
 
 [Variables]
   [u]
-    family = LAGRANGE
-    order = FIRST
   []
 []
 
@@ -62,10 +60,6 @@
 []
 
 [Postprocessors]
-  [u_avg]
-    type = ElementAverageValue
-    variable = u
-  []
   [dummy_avg]
     type = ElementAverageValue
     variable = dummy
@@ -88,6 +82,6 @@
     type = CSV
     file_base = steady_state_aux_zero_nan
     execute_on = 'timestep_end'
-    show = 'u_avg dummy_avg'
+    show = 'dummy_avg'
   []
 []
