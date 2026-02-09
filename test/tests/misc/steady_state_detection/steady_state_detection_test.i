@@ -15,7 +15,7 @@
   [u_ic]
     type = ConstantIC
     variable = u
-    value = 1.0
+    value = 1
   []
 []
 
@@ -35,13 +35,13 @@
     type = DirichletBC
     variable = u
     boundary = left
-    value = 1.0
+    value = 1
   []
   [right]
     type = DirichletBC
     variable = u
     boundary = right
-    value = 1.0
+    value = 1
   []
 []
 
@@ -57,18 +57,37 @@
     type = ParsedAux
     variable = dummy
     expression = 0.0
+    execute_on = 'timestep_end'
+  []
+[]
+
+[Postprocessors]
+  [u_avg]
+    type = ElementAverageValue
+    variable = u
+  []
+  [dummy_avg]
+    type = ElementAverageValue
+    variable = dummy
   []
 []
 
 [Executioner]
   type = Transient
-  dt = 1.0
-  num_steps = 3
+  dt = 1
+  num_steps = 10
+
   steady_state_detection = true
-  check_aux = true
+  check_aux = true                    
+  steady_state_start_time = 1.5      
+  steady_state_tolerance = 1e-12
 []
 
 [Outputs]
-  console = true
-  exodus = false
+  [csv]
+    type = CSV
+    file_base = steady_state_aux_zero_nan
+    execute_on = 'timestep_end'
+    show = 'u_avg dummy_avg'
+  []
 []
