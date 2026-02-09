@@ -1,9 +1,10 @@
 [Tests]
-  [./steady_state_detection_test]
+  [steady_state_detection_test]
     type = CSVDiff
     input = steady_state_detection_test.i
     csvdiff = steady_state_aux_zero_nan.csv
-    ignore_columns = 'u_avg dummy_avg'
+    ignore_columns = 'dummy_avg'
     issues = '#TBD'
-  [../]
+    requirement = 'The system shall be able to detect steady state when an auxiliary variable never changes, without producing NaN relative change norms.'
+  []
 []
