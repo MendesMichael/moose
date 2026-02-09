@@ -6,7 +6,6 @@
 
 [Variables]
   [u]
-    family = LAGRANGE
     order = FIRST
   []
 []
