@@ -6,7 +6,6 @@
 
 [Variables]
   [u]
-    order = FIRST
   []
 []
 
