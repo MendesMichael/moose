@@ -55,7 +55,6 @@
     type = ParsedAux
     variable = dummy
     expression = 0.0
-    execute_on = 'timestep_end'
   []
 []
 
@@ -78,10 +77,5 @@
 []
 
 [Outputs]
-  [csv]
-    type = CSV
-    file_base = steady_state_aux_zero_nan
-    execute_on = 'timestep_end'
-    show = 'dummy_avg'
-  []
+  csv = true
 []
